@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Site Name</title>
     <style>
+        /* Your CSS styles here */
         body {
             font-family: sans-serif;
             margin: 0;
@@ -107,7 +108,7 @@
                         const htmlDoc = parser.parseFromString(data, 'text/html');
                         const links = Array.from(htmlDoc.querySelectorAll('a'))
                             .filter(link => link.href.endsWith('.txt'))
-                            .map(link => link.href);
+                            .map(link => directory + link.href.substring(link.href.lastIndexOf('/') + 1));
 
                         const container = document.getElementById(containerId);
                         container.innerHTML = '';
@@ -177,16 +178,15 @@
                     const htmlDoc = parser.parseFromString(data, 'text/html');
                     const directories = Array.from(htmlDoc.querySelectorAll('a'))
                         .filter(link => link.href.endsWith('/'))
-                        .map(link => link.href);
+                        .map(link => "old_issue/" + link.href.substring(link.href.lastIndexOf('/', link.href.lastIndexOf('/')-1)+1));
 
                     const dropdown = document.getElementById('archiveDropdown');
                     dropdown.innerHTML = ""; //clear previous dropdown items.
 
                     directories.forEach(dir => {
                         const dirName = dir.substring(dir.lastIndexOf('/') + 1);
-                        const fullDir = "old_issue/" + dirName;
                         const link = document.createElement('a');
-                        link.href = `index.html?dir=${fullDir}`;
+                        link.href = `index.html?dir=${dir}`;
                         link.textContent = dirName;
                         dropdown.appendChild(link);
                     });
