@@ -3,88 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Latest Posts</title>
+    <title>PDF Viewer</title>
     <style>
         body {
             font-family: sans-serif;
             margin: 0;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
         }
 
-        .post {
-            border-bottom: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-
-        .post-preview {
-            border: 1px solid #eee;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #f9f9f9;
-        }
-
-        .post-preview a {
-            display: inline-block;
-            margin-top: 5px;
+        #pdfViewer {
+            width: 80%;
+            max-width: 800px;
+            height: 600px;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
 <body>
 
-    <div class="container" id="postContainer">
+    <div id="pdfViewer">
+        <p>PDF will be displayed here.</p>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            function displayPosts(directory, containerId) {
-                fetch(directory)
-                    .then(response => response.text())
-                    .then(data => {
-                        const parser = new DOMParser();
-                        const htmlDoc = parser.parseFromString(data, 'text/html');
-                        const links = Array.from(htmlDoc.querySelectorAll('a'))
-                            .filter(link => link.href.endsWith('.docx'))
-                            .map(link => link.href);
+            fetch('latest_issue/')
+                .then(response => response.text())
+                .then(data => {
+                    const parser = new DOMParser();
+                    const htmlDoc = parser.parseFromString(data, 'text/html');
+                    const pdfLinks = Array.from(htmlDoc.querySelectorAll('a'))
+                        .filter(link => link.href.endsWith('.pdf'))
+                        .map(link => link.href);
 
-                        const container = document.getElementById(containerId);
-                        container.innerHTML = '';
+                    if (pdfLinks.length > 0) {
+                        const pdfUrl = pdfLinks[0]; // Assuming only one PDF in the directory
 
-                        links.forEach(link => {
-                            const post = document.createElement('div');
-                            post.classList.add('post');
-                            const fileName = link.substring(link.lastIndexOf('/') + 1);
+                        const pdfViewer = document.getElementById('pdfViewer');
 
-                            // Simulate fetching and processing the Word document (replace with actual logic)
-                            simulateWordContent(link, fileName, post, link);
-
-                            container.appendChild(post);
-                        });
-                    })
-                    .catch(error => console.error('Error fetching posts:', error));
-            }
-
-            // Function to simulate fetching and processing Word document content
-            function simulateWordContent(link, fileName, postElement, fullLink) {
-                // In a real application, you would use a library or server-side code to extract text from Word documents.
-                // This is a simplified simulation.
-                fetch(link) // This will likely return an error.
-                    .then(()=>{
-                        const previewText = `This is a simulated preview of ${fileName}. In a real application, the text would be extracted from the Word document. Here would be about 80 words.`;
-                        const preview = document.createElement('div');
-                        preview.classList.add('post-preview');
-                        preview.innerHTML = `<p>${previewText}</p><a href="${fullLink}" target="_blank">Read More</a>`;
-                        postElement.innerHTML = `<h2>${fileName}</h2>`;
-                        postElement.appendChild(preview);
-                    })
-                    .catch(()=>{
-                        postElement.innerHTML = `<h2>${fileName}</h2><p>Unable to retrieve document preview.</p><a href="${fullLink}" target="_blank">Read More</a>`;
-                    });
-
-            }
-
-            displayPosts('latest_post/', 'postContainer');
+                        // Check if the browser supports embedding PDFs
+                        if (navigator.mimeTypes['application/pdf'] !== undefined) {
+                            pdfViewer.innerHTML = `<embed src="${pdfUrl}" type="application/pdf" width="100%" height="100%">`;
+                        } else {
+                            // Fallback for browsers that don't support embedding
+                            pdfViewer.innerHTML = `<p>Your browser does not support embedded PDFs. <a href="${pdfUrl}" target="_blank">View PDF</a></p>`;
+                        }
+                    } else {
+                        document.getElementById('pdfViewer').innerHTML = "<p>No PDF found in the latest_issue directory.</p>";
+                    }
+                })
+                .catch(error => console.error('Error fetching directory:', error));
         });
     </script>
+
 </body>
 </html>
