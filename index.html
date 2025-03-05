@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Site Name</title>
     <style>
-        /* Your CSS styles here */
         body {
             font-family: sans-serif;
             margin: 0;
@@ -139,7 +138,7 @@
                                     if (lines[contentStart] && lines[contentStart].startsWith("Images:")) {
                                         const imageList = lines[contentStart].substring(8).split(',').map(item => item.trim());
                                         imageList.forEach(image => {
-                                            imageHtml += `<img src="${directory}${image}" alt="${image}">`;
+                                            imageHtml += `<img src="${link.substring(0, link.lastIndexOf('/') + 1)}${image}" alt="${image}">`;
                                         });
                                         contentStart++; // Skip the Images line
                                     }
