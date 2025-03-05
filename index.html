@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Name</title>
+    <style>
+        /* Your CSS styles here */
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #f0f0f0;
+            padding: 10px;
+            text-align: center;
+        }
+
+        header h1 {
+            color: red;
+            margin: 0;
+            font-size: 2em;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: inline-block;
+        }
+
+        nav li {
+            display: inline-block;
+            margin-right: 20px;
+            position: relative;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #333;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .container {
+            width: 80%;
+            margin: 20px auto;
+        }
+
+        .post {
+            border-bottom: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        .post img {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Site Name</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li class="dropdown">
+                    <a href="javascript:void(0)" class="dropbtn">Archive</a>
+                    <div class="dropdown-content" id="archiveDropdown">
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container" id="postContainer">
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function displayPosts(directory, containerId) {
+                fetch(directory)
+                    .then(response => response.text())
+                    .then(data => {
+                        const parser = new DOMParser();
+                        const htmlDoc = parser.parseFromString(data, 'text/html');
+                        const links = Array.from(htmlDoc.querySelectorAll('a'))
+                            .filter(link => link.href.endsWith('.txt'))
+                            .map(link => link.href);
+
+                        const container = document.getElementById(containerId);
+                        container.innerHTML = '';
+
+                        links.forEach(link => {
+                            const post = document.createElement('div');
+                            post.classList.add('post');
+
+                            // Fetch and display the text content
+                            fetch(link)
+                                .then(response => response.text())
+                                .then(text => {
+                                    const lines = text.split('\n');
+                                    const title = lines[0];
+                                    let authorDate = "";
+                                    let contentPreview = "";
+                                    let contentStart = 2;
+                                    let imageHtml = "";
+
+                                    for (let i = 1; i < lines.length; i++) {
+                                        if (lines[i].trim() !== "") {
+                                            authorDate = lines[i];
+                                            contentStart = i + 1;
+                                            break;
+                                        }
+                                    }
+
+                                    if (lines[contentStart] && lines[contentStart].startsWith("Images:")) {
+                                        const imageList = lines[contentStart].substring(8).split(',').map(item => item.trim());
+                                        imageList.forEach(image => {
+                                            imageHtml += `<img src="${directory}${image}" alt="${image}">`;
+                                        });
+                                        contentStart++; // Skip the Images line
+                                    }
+
+                                    for (let i = contentStart; i < lines.length && i < contentStart + 5; i++) {
+                                        if (lines[i].trim() !== "") {
+                                            contentPreview += lines[i] + "<br>";
+                                        }
+                                    }
+
+                                    post.innerHTML = `<h2>${title}</h2><p>${authorDate}</p>${imageHtml}<p>${contentPreview}...</p><a href="${link}" target="_blank">Read More</a>`;
+                                })
+                                .catch(error => {
+                                    post.innerHTML = `<p>Error loading content.</p><a href="${link}" target="_blank">Read More</a>`;
+                                });
+
+                            container.appendChild(post);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching posts:', error));
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const dir = urlParams.get('dir');
+
+            if (dir) {
+                displayPosts(dir, 'postContainer');
+            } else {
+                displayPosts('latest_issue/', 'postContainer');
+            }
+
+            fetch('old_issue/')
+                .then(response => response.text())
+                .then(data => {
+                    const parser = new DOMParser();
+                    const htmlDoc = parser.parseFromString(data, 'text/html');
+                    const directories = Array.from(htmlDoc.querySelectorAll('a'))
+                        .filter(link => link.href.endsWith('/'))
+                        .map(link => link.href);
+
+                    const dropdown = document.getElementById('archiveDropdown');
+                    dropdown.innerHTML = ""; //clear previous dropdown items.
+
+                    directories.forEach(dir => {
+                        const dirName = dir.substring(dir.lastIndexOf('/') + 1);
+                        const fullDir = "old_issue/" + dirName;
+                        const link = document.createElement('a');
+                        link.href = `index.html?dir=${fullDir}`;
+                        link.textContent = dirName;
+                        dropdown.appendChild(link);
+                    });
+                })
+                .catch(error => console.error('Error fetching archive directories:', error));
+        });
+    </script>
+</body>
+</html>
